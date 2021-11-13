@@ -9,9 +9,8 @@ class ServerWorker:
 	PLAY = 'PLAY'
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
-	PROCESS = 'PROCESS'
+	MOVE = 'MOVE'
 	DESCRIBE = 'DESCRIBE'
-	SWITCH ='SWITCH'
 
 	INIT = 0
 	READY = 1
@@ -21,7 +20,6 @@ class ServerWorker:
 	OK_200 = 0
 	FILE_NOT_FOUND_404 = 1
 	CON_ERR_500 = 2
-	
 	clientInfo = {}
 	
 	def __init__(self, clientInfo):
@@ -36,8 +34,11 @@ class ServerWorker:
 		while True:            
 			data = connSocket.recv(256)
 			if data:
-				print("Data received:\n" + data.decode("utf-8"))
-				self.processRtspRequest(data.decode("utf-8"))
+				row = data.decode("utf-8")
+				if row[0] != "M":
+					print("Data received:\n" + data.decode("utf-8"))
+
+				self.processRtspRequest(data.decode("utf-8"))	
 	
 	def processRtspRequest(self, data):
 		"""Process RTSP request sent from the client."""
@@ -57,7 +58,6 @@ class ServerWorker:
 			if self.state == self.INIT:
 				# Update state
 				print("processing SETUP\n")
-				
 				try:
 					self.clientInfo['videoStream'] = VideoStream(filename)
 					self.state = self.READY
@@ -66,10 +66,8 @@ class ServerWorker:
 				
 				# Generate a randomized RTSP session ID
 				self.clientInfo['session'] = randint(100000, 999999)
-				
 				# Send RTSP reply
 				self.replyRtsp(self.OK_200, seq[1])
-				
 				# Get the RTP/UDP port from the last line
 				self.clientInfo['rtpPort'] = request[2].split(' ')[3]
 		
@@ -99,32 +97,19 @@ class ServerWorker:
 			print("processing DESCRIBE\n")
 			self.replyRtsp(self.OK_200, seq[1], 'describe')
 
+		# Process MOVE request	
+		elif requestType == self.MOVE:
+			# print("processing MOVE\n")
+			# print("req3:",request[3])
+			row3 = request[3].split(' ')
+			newFrame = int(row3[1])
+			self.clientInfo['videoStream'].move(newFrame)
+
 		# Process TEARDOWN request
 		elif requestType == self.TEARDOWN:
 			print("processing TEARDOWN\n")
 			self.clientInfo['event'].set()	
 			self.replyRtsp(self.OK_200, seq[1])
-		# elif requestType == self.PROCESS:
-		# 	print("processing PROCESS\n")
-		# 	try:
-		# 		line3 = request[3].split(' ')
-		# 		newFrame = int(line3[1])
-		# 		self.clientInfo['videoStream'].moveToFrame(newFrame)
-		# 		self.state = self.READY
-		# 	except IOError:
-		# 		self.replyRtsp(self.FILE_NOT_FOUND_404, seq[1])
-		# 	self.replyRtsp(self.OK_200, seq[1])
-		
-		# elif requestType == self.SWITCH:
-		# 	print("processing SWITCH\n")
-		# 	try:
-		# 		self.state = self.READY
-		# 		self.clientInfo['videoStream'] = VideoStream(filename)
-		# 	except IOError:
-		# 		self.replyRtsp(self.FILE_NOT_FOUND_404, seq[1])
-		# 	self.replyRtsp(self.OK_200, seq[1], 'set')	
-		# 	# Close the RTP socket
-		# 	self.clientInfo['rtpSocket'].close()
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""
@@ -160,7 +145,6 @@ class ServerWorker:
 		ssrc = 0 
 		
 		rtpPacket = RtpPacket()
-		
 		rtpPacket.encode(version, padding, extension, cc, seqnum, marker, pt, ssrc, payload)
 		
 		return rtpPacket.getPacket()

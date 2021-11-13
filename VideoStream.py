@@ -1,7 +1,6 @@
 import cv2
 
-
-def count_frames_manual(video):
+def countFrame(video):
 		total = 0
 		while True:
 			(grabbed, frame) = video.read()
@@ -9,11 +8,11 @@ def count_frames_manual(video):
 				break
 			total += 1
 		return total
-def getInfo(filename):
-		video = cv2.VideoCapture(filename)
-		total = count_frames_manual(video)
-		fps = int(video.get(cv2.CAP_PROP_FPS))
-		video.release()
+def getInfomation(filename):
+		movie = cv2.VideoCapture(filename)
+		total = countFrame(movie)
+		fps = int(movie.get(cv2.CAP_PROP_FPS))
+		movie.release()
 		return total, fps
 
 class VideoStream:
@@ -24,14 +23,13 @@ class VideoStream:
 		except:
 			raise IOError
 		self.frameNum = 0
-		self.totalFrame, self.fps = getInfo(filename)
+		self.totalFrame, self.fps = getInfomation(filename)
 
 	def nextFrame(self):
 		"""Get next frame."""
 		data = self.file.read(5) # Get the framelength from the first 5 bits
 		if data: 
-			framelength = int(data)
-							
+			framelength = int(data)	
 			# Read the current frame
 			data = self.file.read(framelength)
 			self.frameNum += 1
@@ -42,19 +40,22 @@ class VideoStream:
 		return self.frameNum
 	
 	def getTotalFrame(self):
+		"""Get total frame ."""
 		return self.totalFrame
 	
 	def getFps(self):
+		"""Get fps of the movie."""
 		return self.fps
 	
-	# def moveToFrame(self, newFrameNum):
-	# 	if newFrameNum > self.frameNum:
-	# 		while self.frameNum < newFrameNum:
-	# 			data = self.nextFrame()
-	# 	elif newFrameNum < self.frameNum:
-	# 		#self.file.close()
-	# 		self.file = open(self.filename, 'rb')
-	# 		self.frameNum = 0
-	# 		self.moveToFrame(newFrameNum)
+	def move(self, newFrameNum):
+		if self.frameNum == 0:
+			self.file = open(self.filename, 'rb')
 
-	
+		if newFrameNum > self.frameNum:
+			while self.frameNum < newFrameNum:
+				data = self.nextFrame()
+		elif newFrameNum < self.frameNum:
+			self.frameNum = 0
+			self.move(newFrameNum)
+		else :
+			return 
