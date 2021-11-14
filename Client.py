@@ -141,10 +141,10 @@ class Client:
 			self.sendRtspRequest(self.DESCRIBE)
 
 	def moveFrame(self,value):
-		# update frame and info when scroll the scale only when scroll more than 15 unit
+		# update frame and info when scroll the scale only when scroll more than 10 unit
 		if self.state != self.INIT:
 			self.nextFrame = int(self.scale.get())
-			if abs(self.nextFrame - self.frameNbr) >= 15:
+			if abs(self.nextFrame - self.frameNbr) >= 10:
 				self.sendRtspRequest(self.MOVE)
 
 	def listenRtp(self):		
@@ -319,9 +319,13 @@ class Client:
 						self.playEvent.set()
 					
 					elif self.requestSent == self.MOVE:
+						if self.nextFrame < self.frameNbr :
+							self.state = self.READY #
+							self.playEvent.set() #
+
 						self.totalReceivedFrame += (self.frameNbr - self.nextFrame)
 						self.frameNbr = self.nextFrame
-					
+						
 					elif self.requestSent == self.TEARDOWN:
 						self.state = self.INIT
 						# Flag the teardownAcked to close the socket.

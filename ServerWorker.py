@@ -103,7 +103,11 @@ class ServerWorker:
 			# print("req3:",request[3])
 			row3 = request[3].split(' ')
 			newFrame = int(row3[1])
+			if newFrame < self.clientInfo['videoStream'].frameNbr():
+				self.state = self.READY 
+				self.clientInfo['event'].set() 
 			self.clientInfo['videoStream'].move(newFrame)
+			self.replyRtsp(self.OK_200, seq[1]) #
 
 		# Process TEARDOWN request
 		elif requestType == self.TEARDOWN:
