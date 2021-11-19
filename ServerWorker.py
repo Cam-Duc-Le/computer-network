@@ -1,6 +1,5 @@
 from random import randint
 import sys, traceback, threading, socket
-
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
 
@@ -104,16 +103,21 @@ class ServerWorker:
 			row3 = request[3].split(' ')
 			newFrame = int(row3[1])
 			if newFrame < self.clientInfo['videoStream'].frameNbr():
+				self.clientInfo['event'].set()
 				self.state = self.READY 
-				self.clientInfo['event'].set() 
+				 
 			self.clientInfo['videoStream'].move(newFrame)
 			self.replyRtsp(self.OK_200, seq[1]) #
 
 		# Process TEARDOWN request
 		elif requestType == self.TEARDOWN:
 			print("processing TEARDOWN\n")
-			self.clientInfo['event'].set()	
+			self.clientInfo['event'].set()
+			self.state = self.INIT	
+			# self.clientInfo['worker'].join()
 			self.replyRtsp(self.OK_200, seq[1])
+			self.clientInfo['rtpSocket'].close()
+			
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""

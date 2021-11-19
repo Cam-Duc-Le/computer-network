@@ -8,10 +8,11 @@ def countFrame(video):
 				break
 			total += 1
 		return total
+
 def getInfomation(filename):
 		movie = cv2.VideoCapture(filename)
 		total = countFrame(movie)
-		fps = int(movie.get(cv2.CAP_PROP_FPS))
+		fps = int(movie.get(cv2.CAP_PROP_FPS)) - 9
 		movie.release()
 		return total, fps
 
